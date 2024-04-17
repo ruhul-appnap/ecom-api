@@ -1,11 +1,11 @@
 import express, { Express, Request, Response } from "express";
+import { PORT } from "./secrets";
+import rootRouter from "./routes";
 
 const app: Express = express();
 
-app.get("/", (_req: Request, res: Response) => {
-  res.send("Hello world");
-});
+app.use("/api", rootRouter);
 
-app.listen(3000, () => {
-  console.log("server is running on port 3000");
+app.listen(PORT, () => {
+  console.log(`server is running on port ${PORT}`);
 });
