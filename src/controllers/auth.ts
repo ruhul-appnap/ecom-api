@@ -3,15 +3,38 @@ import NotFoundException from "../exceptions/not-found";
 import { RegisterSchema } from "../schema/user";
 import UnProcessableEntity from "../exceptions/validation";
 import { formatError } from "../utils/error-formater";
+import prisma from "../lib/db";
+import { hashPassword } from "../lib/bcrypt";
 
-export const register = (req: Request, res: Response, next: NextFunction) => {
+export const register = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     RegisterSchema.parse(req.body);
 
     const { name, email, password } = req.body;
-    console.log({ name, email, password });
+    const user = await prisma.user.findFirst({
+      where: { email },
+    });
 
-    next(new NotFoundException("User not found"));
+    if (user) {
+      next(new NotFoundException("User already exists"));
+    }
+
+    const newUser = await prisma.user.create({
+      data: {
+        name,
+        email,
+        password: await hashPassword(password),
+      },
+    });
+
+    res.status(201).json({
+      message: "User created successfully",
+      data: newUser,
+    });
   } catch (error: any) {
     next(
       new UnProcessableEntity(
