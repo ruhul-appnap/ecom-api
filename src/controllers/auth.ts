@@ -1,10 +1,10 @@
 import { Request, Response, NextFunction } from "express";
 import NotFoundException from "../exceptions/not-found";
-import { RegisterSchema } from "../schema/user";
+import { LoginSchema, RegisterSchema } from "../schema/user";
 import UnProcessableEntity from "../exceptions/validation";
 import { formatError } from "../utils/error-formater";
 import prisma from "../lib/db";
-import { hashPassword } from "../lib/bcrypt";
+import { comparePassword, hashPassword } from "../lib/bcrypt";
 
 export const register = async (
   req: Request,
@@ -51,6 +51,41 @@ export const register = async (
   }
 };
 
-export const login = (req: Request, res: Response) => {
-  res.send("logging in");
+export const login = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    LoginSchema.parse(req.body);
+
+    const { email, password } = req.body;
+    const user = await prisma.user.findFirst({
+      where: { email },
+    });
+
+    if (!user) {
+      return next(new NotFoundException("User does not exists"));
+    }
+
+    if (!(await comparePassword(password, user.password)))
+      return next(new NotFoundException("Password is not valid"));
+
+    res.status(200).json({
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+      },
+    });
+  } catch (error: any) {
+    next(
+      new UnProcessableEntity(
+        "Invalid request body",
+        formatError(error?.issues)
+      )
+    );
+  }
 };
