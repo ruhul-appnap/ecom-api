@@ -20,7 +20,7 @@ export const register = async (
     });
 
     if (user) {
-      next(new NotFoundException("User already exists"));
+      return next(new NotFoundException("User already exists"));
     }
 
     const newUser = await prisma.user.create({
@@ -33,7 +33,13 @@ export const register = async (
 
     res.status(201).json({
       message: "User created successfully",
-      data: newUser,
+      data: {
+        id: newUser.id,
+        name: newUser.name,
+        email: newUser.email,
+        createdAt: newUser.createdAt,
+        updatedAt: newUser.updatedAt,
+      },
     });
   } catch (error: any) {
     next(
