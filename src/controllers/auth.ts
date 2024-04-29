@@ -5,6 +5,7 @@ import UnProcessableEntity from "../exceptions/validation";
 import { formatError } from "../utils/error-formater";
 import prisma from "../lib/db";
 import { comparePassword, hashPassword } from "../lib/bcrypt";
+import { generateToken } from "../lib/jsonwebtoken";
 
 export const register = async (
   req: Request,
@@ -79,6 +80,7 @@ export const login = async (
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       },
+      token: generateToken({ user: user.id }),
     });
   } catch (error: any) {
     next(
